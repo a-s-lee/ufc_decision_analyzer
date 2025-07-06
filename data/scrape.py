@@ -31,6 +31,10 @@ def scrape_event(url):
     #   r"^.*?\d+" means "from start, lazily match chars until a digit, then consume all digits"
     m = re.match(r"^.*?\d+", raw_title)
     event = m.group(0) if m else raw_title
+    td = soup.find('td', class_='decision-bottom2')
+    year_match = re.search(r"\b(\d{4})\b", td.text if td else "")
+    year = year_match.group(1) if year_match else ""
+
     # Examples:
     #   "UFC on ABC 8: Hill vs..."  → "UFC on ABC 8"
     #   "UFC 317: Topuria vs..."    → "UFC 317"
@@ -70,6 +74,7 @@ def scrape_event(url):
 
             # Add our row to the list
             records.append({
+                "year": year,
                 "event":  event,
                 "bout":   bout,
                 "method": method,
