@@ -19,9 +19,7 @@ def scrape_event(url):
 
     # 2. Extract event name (e.g., "UFC 107")
     raw_title_tag = soup.select_one("td.decision-top2 b")
-    raw_title = raw_title_tag.get_text(strip=True) if raw_title_tag else ""
-    m = re.match(r"^.*?\d+", raw_title)
-    event = m.group(0) if m else raw_title
+    event = raw_title_tag.get_text(strip=True) if raw_title_tag else ""
 
     # 3. Extract event year from date text
     td = soup.find('td', class_='decision-bottom2')
@@ -70,17 +68,22 @@ def scrape_event(url):
 
 if __name__ == "__main__":
     df = pd.read_csv('ufc_event_urls.csv')
+
     all_data = []
 
-    for year, group in df.groupby("year"):
-        print(f"\nStarting year {year} ({len(group)} events)")
-        for event_index, url in enumerate(group['url'], start=1):
-            try:
-                event_df = scrape_event(url)
-                all_data.append(event_df)
-                print(f"Scraped Event #{event_index} Out Of {len(group)}")
-            except Exception as e:
-                print(f"Error scraping {url}: {e}")
+    # iterate in CSV order from row 0 → end
+    for idx, row in df.iterrows():
+        url = row['url']
+        year = row['year']
+        title = row['title']
+
+        print(f"Scraping row #{idx+1}: {title} ({year})")
+
+        try:
+            event_df = scrape_event(url)
+            all_data.append(event_df)
+        except Exception as e:
+            print(f"Error scraping {url}: {e}")
 
     print(f"\nYou have scraped a total of {len(df)} events!")
     big_df = pd.concat(all_data, ignore_index=True)

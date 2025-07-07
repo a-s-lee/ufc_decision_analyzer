@@ -53,3 +53,18 @@ def set_bg(image_path):
 
 set_bg("../bg.jpg")
 
+# Year Slider (start_year & end_year is the user's input)
+# 1. Always reactive inputs:
+start_year, end_year = st.sidebar.slider("Years", 1996, 2025, (2000, 2010))
+available = df.loc[df.year.between(start_year, end_year), "event"].unique()
+events = ["All Events"] + sorted(available)
+selected_event = st.sidebar.selectbox("Select an Event", events)
+
+# 2. One‐off trigger:
+if st.sidebar.button("Analyze"):
+    filtered = df[df.year.between(start_year, end_year)]
+    if selected_event != "All Events":
+        filtered = filtered[filtered.event == selected_event]
+    # …generate charts, metrics, etc.
+
+
