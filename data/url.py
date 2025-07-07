@@ -58,7 +58,7 @@ def get_ufc_event_urls_for_year(year):
 
 if __name__ == "__main__":
     # -- Configuration: years you want to scrape --
-    years = range(2024, 2026)  # change this range as needed
+    years = range(1996, 2026)  # change this range as needed
 
     # -- Open (or create) the CSV file for writing --
     with open("ufc_event_urls.csv", "w", newline="", encoding="utf-8") as f:
