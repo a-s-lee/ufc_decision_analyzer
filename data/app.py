@@ -1,6 +1,8 @@
 import pandas as pd
 import streamlit as st
 import base64
+import plotly.express as px
+import plotly.graph_objects as go
 
 # Cache the load (so Streamlit doesn’t re-read the file on every interaction)
 @st.cache_data
@@ -65,11 +67,63 @@ choices = ["All Events"] + ordered
 # 4) Show the selectbox
 selected_event = st.sidebar.selectbox("Select an Event", choices)
 
+# Returns dataframe that determines ratio of method victories
+def method_ratio(df):
+    # count judge‐cards per method…
+    counts = df["method"].value_counts()
+    # …then divide by 3 to get bouts-per-method
+    bout_counts = counts / 3
+    return bout_counts.sort_index()
+
 # 2. One‐off trigger:
 if st.sidebar.button("Analyze"):
-    filtered = df[df.year.between(start_year, end_year)]
-    if selected_event != "All Events":
-        filtered = filtered[filtered.event == selected_event]
-    # …generate charts, metrics, etc.
+
+    mask_year = (df.year >= start_year) & (df.year <= end_year)
+    df_year = df[mask_year]
+    
+    if selected_event == "All Events":
+        to_plot = df_year
+        title = f"All Events ({start_year}-{end_year})"
+    else:
+        to_plot = df_year[df_year.event == selected_event]
+        title = f"{selected_event} ({start_year}-{end_year})"
+
+    # 3. Creates Chart
+    ratio = method_ratio(to_plot)
+    st.subheader(f"Decision-Type Ratio for {title}")
+    
+    # same DataFrame as above
+    chart_df = ratio.reset_index()
+    chart_df.columns = ["Decision Method", "Bouts"]
+
+    fig = px.bar(
+        chart_df,
+        x="Decision Method",
+        y="Bouts",
+        color="Decision Method",
+        title=f"Decision-Type Ratio for {title}",
+        labels={"Bouts": "Number of Bouts", "Decision Method": "Decision Type"},
+    )
+    fig.update_layout(
+        hoverdistance=50   # how many pixels away the cursor can be
+    )
+
+    # 2. Overlay invisible, large markers on just the Unknown bars:
+    unknown_df = chart_df[chart_df["Decision Method"].str.startswith("Unknown")]
+    fig.add_trace(
+        go.Scatter(
+            x=unknown_df["Decision Method"],
+            y=unknown_df["Bouts"],
+            mode="markers",
+            marker=dict(size=60, opacity=0),   # big & invisible
+            hoverinfo="text",
+            hovertext=[f"{m}: {b}" for m, b in zip(unknown_df["Decision Method"], unknown_df["Bouts"])],
+            showlegend=False
+        )
+    )
+    
+    st.plotly_chart(fig, use_container_width=True)
+
+    
 
 
