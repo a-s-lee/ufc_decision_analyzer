@@ -162,3 +162,18 @@ if st.sidebar.button("Analyze"):
         st.write("No Split Decisions in this selection.")
     
     st.plotly_chart(fig, use_container_width=True) 
+
+if st.sidebar.button("Decision Trends Over the Years"):
+    yearly_cards = (
+        df
+        .groupby("year")["method"]
+        .value_counts()
+        .unstack()
+        .fillna(0)
+    )
+
+    # 2) Convert to bouts (3 cards per bout)
+    yearly_bouts = yearly_cards / 3
+
+    st.subheader("Yearly Decision Counts (in Bouts)")
+    st.line_chart(yearly_bouts)
