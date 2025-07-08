@@ -3,6 +3,7 @@ import streamlit as st
 import base64
 import plotly.express as px
 import plotly.graph_objects as go
+import numpy as np
 
 # Cache the load (so Streamlit doesn’t re-read the file on every interaction)
 @st.cache_data
@@ -75,6 +76,29 @@ def method_ratio(df):
     bout_counts = counts / 3
     return bout_counts.sort_index()
 
+def count_split(df):
+    
+    # Counts only methods with split decisions
+    split_df = df[df["method"].str.contains("Split", case=False, na=False)].copy()
+
+    judges = []
+    
+    # Goes through each (event, bout) tuple
+    for (_, bout_group) in split_df.groupby(["event","bout"]):
+        # Takes column score and splits into ints
+        scores = bout_group["score"].str.split("-", expand=True).astype(int)
+        # Turns score differnece into series
+        diffs = scores.iloc[:, 0] - scores.iloc[:, 1]
+
+        for idx in diffs[diffs < 0].index:
+            judges.append(bout_group.at[idx, "judge"])
+
+    counts = pd.Series(judges).value_counts()
+    return counts.reset_index().rename(
+        columns={"index": "judge", "count": "dissent_count"}
+    )
+
+
 # 2. One‐off trigger:
 if st.sidebar.button("Analyze"):
 
@@ -121,9 +145,20 @@ if st.sidebar.button("Analyze"):
             showlegend=False
         )
     )
+
+    judge_df = count_split(to_plot)
+
+    if not judge_df.empty:
+        fig2 = px.bar(
+            judge_df,
+            x="judge",
+            y="dissent_count",
+            title="Judges with Most Split-Decision Dissents",
+            labels={"dissent_count": "Number of Dissenting Cards", "judge": "Judge"}
+        )
+        st.subheader("Split-Decision Dissent by Judge")
+        st.plotly_chart(fig2, use_container_width=True)
+    else:
+        st.write("No Split Decisions in this selection.")
     
-    st.plotly_chart(fig, use_container_width=True)
-
-    
-
-
+    st.plotly_chart(fig, use_container_width=True) 
