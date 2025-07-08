@@ -3,7 +3,6 @@ import streamlit as st
 import base64
 import plotly.express as px
 import plotly.graph_objects as go
-import numpy as np
 
 # Cache the load (so Streamlit doesn’t re-read the file on every interaction)
 @st.cache_data
