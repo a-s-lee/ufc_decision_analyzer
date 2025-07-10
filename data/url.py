@@ -18,7 +18,8 @@ def get_ufc_event_urls_for_year(year):
         archive_url,
         headers={"User-Agent": "Mozilla/5.0"}  # pretend to be a normal browser
     )
-
+    
+    # When you download a webpage with requests.get(), the content is raw bytes.
     # -- Determine and set the correct character encoding --
     # Look for "charset=XYZ" in the HTTP response headers
     ctype = resp.headers.get("Content-Type", "")
@@ -30,7 +31,7 @@ def get_ufc_event_urls_for_year(year):
         # Otherwise let requests guess the best encoding
         resp.encoding = resp.apparent_encoding
 
-    # -- Parse the downloaded HTML --
+    # Turns the raw HTML string into a navigable BeautifulSoup tree using the fast lxml parser.
     soup = BeautifulSoup(resp.text, "lxml")
 
     results = []  # will hold our (title, url) pairs
@@ -52,12 +53,12 @@ def get_ufc_event_urls_for_year(year):
             full_url = urljoin(base, href)
             results.append((title, full_url))
 
-    # Remove duplicates while preserving order
+    # Remove duplicates by turning into dict then back into list
     return list(dict.fromkeys(results))
 
 
 if __name__ == "__main__":
-    # -- Configuration: years you want to scrape --
+    # -- Configuration: years you want to scrape (Starts from most recent) --
     years = range(2025, 1997, -1)
 
     # -- Open (or create) the CSV file for writing --

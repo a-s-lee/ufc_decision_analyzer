@@ -19,11 +19,13 @@ def scrape_event(url):
 
     # 2. Extract event name (e.g., "UFC 107")
     raw_title_tag = soup.select_one("td.decision-top2 b")
+    # strip=True trims whitespace else statement returns "" if no tag is found
     event = raw_title_tag.get_text(strip=True) if raw_title_tag else ""
 
     # 3. Extract event year from date text
     td = soup.find('td', class_='decision-bottom2')
     year_match = re.search(r"\b(\d{4})\b", td.text if td else "")
+    # Converts to int
     year = int(year_match.group(1)) if year_match else None
 
     records = []
@@ -36,10 +38,12 @@ def scrape_event(url):
         method_tag = fight_cell.find("i")
         method = method_tag.get_text(strip=True) if method_tag else ""
 
-        # Get the next 3 judge <td> cells
+        # Get the next 3 judge <td> cells and stores in list
         judge_cells = fight_cell.find_next_siblings("td")[:3]
 
+        # Loops through the <td> tags in judge_cells (judge name + score), and giving each one a position number 
         for pos, jc in enumerate(judge_cells, start=1):
+            # Find the judge's name — sometimes it’s inside an <a>, sometimes a <b>.
             name_tag = jc.find(["a", "b"])
             name = name_tag.get_text(strip=True) if name_tag else "Unknown"
 
@@ -57,7 +61,7 @@ def scrape_event(url):
                 "pos":    pos
             })
 
-    # 5. Build DataFrame and deduplicate
+    # 5. Converts dicts to dataframe
     df = pd.DataFrame(records)
     df = df.drop_duplicates(
         subset=["event", "bout", "method", "judge", "score", "pos"],

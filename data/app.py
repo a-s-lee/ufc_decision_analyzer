@@ -57,10 +57,9 @@ set_bg("../bg.jpg")
 
 # Year Slider (start_year & end_year is the user's input)
 start_year, end_year = st.sidebar.slider("Years", 1996, 2025, (2000, 2010))
-# 1) Mask rows to the chosen years
+# 1) Mask rows into boolean series (e.g. [ True, False, True, False, True ])
 mask = df["year"].between(start_year, end_year)
-# 2) Pull out the events in their original CSV order,
-#    dropping duplicates but preserving first‐seen order:
+# 2) Filters the DataFrame by the Boolean mask (only true ones), returning only the event column.
 ordered = df.loc[mask, "event"].unique().tolist()
 # 3) Prepend “All Events” so it’s always first:
 choices = ["All Events"] + ordered
@@ -69,14 +68,13 @@ selected_event = st.sidebar.selectbox("Select an Event", choices)
 
 # Returns dataframe that determines ratio of method victories
 def method_ratio(df):
-    # count judge‐cards per method…
+    # Grabs the column called "method" and .value_counts() counts how many for each unique value 
     counts = df["method"].value_counts()
     # …then divide by 3 to get bouts-per-method
     bout_counts = counts / 3
     return bout_counts.sort_index()
 
 def count_split(df):
-    
     # Counts only methods with split decisions
     split_df = df[df["method"].str.contains("Split", case=False, na=False)].copy()
 
@@ -86,7 +84,7 @@ def count_split(df):
     for (_, bout_group) in split_df.groupby(["event","bout"]):
         # Takes column score and splits into ints
         scores = bout_group["score"].str.split("-", expand=True).astype(int)
-        # Turns score differnece into series
+        # Turns score difference into series
         diffs = scores.iloc[:, 0] - scores.iloc[:, 1]
 
         for idx in diffs[diffs < 0].index:
@@ -100,7 +98,7 @@ def count_split(df):
 
 # 2. One‐off trigger:
 if st.sidebar.button("Analyze"):
-
+    # Creates another boolean mask
     mask_year = (df.year >= start_year) & (df.year <= end_year)
     df_year = df[mask_year]
     
@@ -108,6 +106,7 @@ if st.sidebar.button("Analyze"):
         to_plot = df_year
         title = f"All Events ({start_year}-{end_year})"
     else:
+        # Specific Event
         to_plot = df_year[df_year.event == selected_event]
         title = f"{selected_event} ({start_year}-{end_year})"
 
